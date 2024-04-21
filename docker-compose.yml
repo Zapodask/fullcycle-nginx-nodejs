@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: app
+    command: dockerize -wait tcp://db:3306 -timeout 60s yarn start
+    ports:
+      - "3333:3333"
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.3
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app-db
+    restart: always
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    command: dockerize -wait tcp://app:3333 -timeout 60s nginx -g 'daemon off;'
+    depends_on:
+      - app
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
