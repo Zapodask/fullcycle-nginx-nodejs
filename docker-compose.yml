@@ -13,6 +13,8 @@ services:
       - db
     networks:
       - app-network
+    volumes:
+      - ./app:/app
 
   db:
     image: mysql:8.3
